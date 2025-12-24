@@ -1,0 +1,234 @@
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+}
+
+:root {
+  scrollbar-gutter: stable;
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Warm Minimalist Palette */
+  --bg-color: #EFEDE8;
+  /* Warm Beige */
+  --text-primary: #111111;
+  --text-secondary: #666666;
+  --card-bg: #EAE8E3;
+  /* Slightly darker/different shade for cards or keep transparent with border */
+  --card-border: #D8D6D0;
+  --border-color: #D8D6D0;
+
+  --primary-btn: #111111;
+  --primary-btn-text: #FFFFFF;
+  --secondary-btn: #EAE8E3;
+
+  --spacing-base: 1rem;
+  --radius: 4px;
+  /* Sharper radius for that Swiss look */
+  --radius-lg: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg-color);
+  color: var(--text-primary);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  padding: 0;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+button:active {
+  opacity: 0.8;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 1rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 0.8rem;
+  border-radius: var(--radius);
+  color: var(--text-primary);
+}
+
+input:focus {
+  outline: 1px solid var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* Utilities */
+.container {
+  max-width: 1350px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+/* ================================
+   MOBILE RESPONSIVE STYLES
+   ================================ */
+
+/* Tablet and below */
+@media screen and (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  h1 {
+    font-size: 2rem !important;
+  }
+}
+
+/* Mobile devices */
+@media screen and (max-width: 480px) {
+  .container {
+    padding: 0 0.75rem;
+  }
+
+  h1 {
+    font-size: 1.75rem !important;
+  }
+
+  /* Make modals full-width on mobile */
+  .modal-content {
+    width: 95% !important;
+    max-width: none !important;
+    padding: 1.5rem !important;
+  }
+}
+
+/* Dashboard-specific mobile styles */
+@media screen and (max-width: 600px) {
+
+  /* Header: Stack title and link button vertically */
+  .dashboard-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  /* Category tabs: Horizontal scroll instead of wrap */
+  .category-tabs {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0.5rem !important;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-tab {
+    flex-shrink: 0 !important;
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.8rem !important;
+  }
+
+  /* Document cards: Full width */
+  .document-card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Document card buttons: Stack or compact */
+  .document-actions {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .document-actions button {
+    flex: 1 1 auto !important;
+    min-width: 80px !important;
+    padding: 0 0.8rem !important;
+    height: 38px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .document-actions .icon-button {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    flex: 0 0 38px !important;
+    aspect-ratio: 1 / 1;
+    padding: 0 !important;
+  }
+
+  /* Upload button: Smaller on mobile */
+  .upload-button {
+    padding: 0.8rem 2rem !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Modal category buttons: Smaller */
+  .modal-category-btn {
+    padding: 0.4rem 0.7rem !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+/* Very small screens */
+@media screen and (max-width: 360px) {
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .category-tab {
+    font-size: 0.7rem !important;
+    padding: 0.4rem 0.6rem !important;
+  }
+}

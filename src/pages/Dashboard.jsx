@@ -21,6 +21,15 @@ const Dashboard = () => {
     const [linking, setLinking] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    // Mobile responsive state
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 600);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // Constant categories definition (stabilized)
     const activeCatRef = useRef('All'); // For resize listener access without re-binding
     const categories = useRef(['Identity', 'Education', 'Medical', 'Financial', 'Vehicle', 'Work', 'Property', 'Government Schemes', 'Legal', 'Travel', 'Utility', 'Personal', 'Subscriptions']).current;
@@ -258,23 +267,24 @@ const Dashboard = () => {
         <div>
             <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h1 style={{ fontSize: '3rem', fontWeight: 400, letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>
+                    <h1 style={{ fontSize: isMobile ? '2rem' : '3rem', fontWeight: 400, letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>
                         {viewingUser?.phone === user?.phone ? (
-                            <>Welcome {user?.name || 'User'}</>
+                            <>Welcome {user?.name?.split(' ')[0] || 'User'}</>
                         ) : (
-                            <>Viewing {viewingUser?.name}'s Documents</>
+                            <>Viewing {viewingUser?.name}'s Docs</>
                         )}
                     </h1>
 
                     {/* User Details (Phone & Email) */}
                     <div style={{
-                        fontSize: '0.9rem',
+                        fontSize: isMobile ? '0.8rem' : '0.9rem',
                         color: 'var(--text-secondary)',
                         marginTop: '0.5rem',
                         fontWeight: 500,
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem'
+                        flexDirection: isMobile ? 'column' : 'row',
+                        alignItems: isMobile ? 'flex-start' : 'center',
+                        gap: isMobile ? '0.2rem' : '0.4rem'
                     }}>
                         <span>{(() => {
                             const p = viewingUser?.phone || user?.phone || '';
@@ -283,10 +293,9 @@ const Dashboard = () => {
                             return match ? `${match[1]} ${match[2]} ${match[3]}` : p;
                         })()}</span>
                         {(viewingUser?.email || user?.email) && (
-                            <>
-                                <span style={{ opacity: 0.5 }}>|</span>
-                                <span>{viewingUser?.email || user?.email}</span>
-                            </>
+                            <span>
+                                {isMobile ? '' : '| '}{viewingUser?.email || user?.email}
+                            </span>
                         )}
                     </div>
                 </div>
@@ -893,7 +902,8 @@ const Dashboard = () => {
                 justifyContent: 'center', // Center cards horizontally
                 minHeight: '40vh', // Ensure enough height for centering
                 alignContent: 'flex-start', // Align content start if present
-                position: 'relative'
+                position: 'relative',
+                paddingBottom: isMobile ? '10rem' : '6rem' // Extra space for upload button
             }}>
                 {filteredDocs.length === 0 && (
                     <div style={{

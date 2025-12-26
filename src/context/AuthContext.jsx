@@ -2,6 +2,7 @@ import { createContext, useState, useContext, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion } from "firebase/firestore";
 import { hashPassword, verifyPassword } from '../utils/hash';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -11,17 +12,54 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [viewingUser, setViewingUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [sessionId, setSessionId] = useState(null);
+
+    // Generate unique session ID
+    const generateSessionId = () => {
+        return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    };
 
     // Check for existing session in localStorage
     useEffect(() => {
         const storedUser = localStorage.getItem('cloudpocket_user');
-        if (storedUser) {
+        const storedSessionId = localStorage.getItem('cloudpocket_session');
+        if (storedUser && storedSessionId) {
             const parsedUser = JSON.parse(storedUser);
             setUser(parsedUser);
             setViewingUser(parsedUser);
+            setSessionId(storedSessionId);
         }
         setLoading(false);
     }, []);
+
+    // Periodically validate session (every 30 seconds)
+    useEffect(() => {
+        if (!user || !sessionId) return;
+
+        const validateSession = async () => {
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.phone));
+                if (userDoc.exists()) {
+                    const currentSessionId = userDoc.data().sessionId;
+                    if (currentSessionId && currentSessionId !== sessionId) {
+                        // Session mismatch - another device logged in
+                        console.log('Session expired: logged in from another device');
+                        toast.error('Your account was logged in on another device');
+                        // Small delay to let toast show before redirect
+                        setTimeout(() => logout(), 1500);
+                    }
+                }
+            } catch (err) {
+                console.error('Session validation error:', err);
+            }
+        };
+
+        // Validate immediately, then every 30 seconds
+        validateSession();
+        const interval = setInterval(validateSession, 30000);
+
+        return () => clearInterval(interval);
+    }, [user, sessionId]);
 
     // Check if phone or email is registered
     const checkUserExists = async (phone, email) => {
@@ -73,11 +111,17 @@ export const AuthProvider = ({ children }) => {
 
         await setDoc(doc(db, "users", formattedPhone), userData);
 
+        // Generate and store session ID
+        const newSessionId = generateSessionId();
+        await updateDoc(doc(db, "users", formattedPhone), { sessionId: newSessionId });
+
         // Set session
         const sessionUser = { name, phone: formattedPhone, email, linkedAccounts: [] };
         setUser(sessionUser);
         setViewingUser(sessionUser);
+        setSessionId(newSessionId);
         localStorage.setItem('cloudpocket_user', JSON.stringify(sessionUser));
+        localStorage.setItem('cloudpocket_session', newSessionId);
 
         return sessionUser;
     };
@@ -102,6 +146,10 @@ export const AuthProvider = ({ children }) => {
             throw new Error('Incorrect password.');
         }
 
+        // Generate and store session ID
+        const newSessionId = generateSessionId();
+        await updateDoc(doc(db, "users", formattedPhone), { sessionId: newSessionId });
+
         // Set session
         const sessionUser = {
             name: userData.name,
@@ -111,7 +159,9 @@ export const AuthProvider = ({ children }) => {
         };
         setUser(sessionUser);
         setViewingUser(sessionUser);
+        setSessionId(newSessionId);
         localStorage.setItem('cloudpocket_user', JSON.stringify(sessionUser));
+        localStorage.setItem('cloudpocket_session', newSessionId);
 
         return sessionUser;
     };
@@ -297,7 +347,9 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setUser(null);
         setViewingUser(null);
+        setSessionId(null);
         localStorage.removeItem('cloudpocket_user');
+        localStorage.removeItem('cloudpocket_session');
     };
 
     return (

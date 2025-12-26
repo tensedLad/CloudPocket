@@ -19,6 +19,7 @@ CloudPocket is a secure, personal document management system designed to help us
 -   **🔔 Toast Notifications**: Clean, themed toast messages for all user feedback (react-hot-toast).
 -   **✨ Smooth Animations**: Framer Motion powered modal animations and page transitions.
 -   **👁️ Password Visibility Toggle**: Eye icons on all password fields for better UX.
+-   **🔒 Single-Session Login**: Only one device can be logged in at a time; new logins auto-logout old sessions.
 
 ## 🛠️ Tech Stack
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -26,6 +26,15 @@ const Settings = () => {
 
     // Feedback
     const [loading, setLoading] = useState(false);
+
+    // Mobile responsive state
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 600);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // --- Handlers ---
     const handleUpdateName = async () => {
@@ -147,7 +156,6 @@ const Settings = () => {
                                     onChange={(e) => setName(e.target.value)}
                                     style={{
                                         width: '100%',
-                                        paddingRight: '5rem',
                                         padding: '0.8rem 1.2rem',
                                         paddingRight: '5rem',
                                         background: isEditingName ? 'transparent' : 'rgba(0,0,0,0.03)',
@@ -321,6 +329,9 @@ const Settings = () => {
                         </div>
                     </div>
                 </section>
+
+                {/* Spacer for mobile footer */}
+                {isMobile && <div style={{ height: '2rem' }} />}
             </div>
 
             {/* Change Password Modal */}

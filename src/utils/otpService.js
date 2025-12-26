@@ -25,12 +25,20 @@ export const sendOTP = async (emailAddress, otp) => {
             throw new Error('EmailJS credentials are missing in .env');
         }
 
+        // Calculate expiry time (current time + 15 minutes)
+        const expiryTime = new Date(Date.now() + 15 * 60 * 1000);
+        const formattedExpiry = expiryTime.toLocaleTimeString('en-IN', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
         // IMPORTANT: These must match the template variables EXACTLY
         // Your template uses: {{email}}, {{passcode}}, {{time}}
         const templateParams = {
             email: emailAddress,       // For "To Email" field in template
             passcode: otp,             // For {{passcode}} in email body
-            time: '15 minutes',        // For {{time}} in email body
+            time: formattedExpiry,     // For {{time}} in email body (e.g., "2:07 PM")
         };
 
         console.log('Sending OTP with variables:', templateParams);

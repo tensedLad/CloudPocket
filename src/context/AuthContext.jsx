@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion } from "firebase/firestore";
 import { hashPassword, verifyPassword } from '../utils/hash';
 
 const AuthContext = createContext();
@@ -106,6 +106,7 @@ export const AuthProvider = ({ children }) => {
         const sessionUser = {
             name: userData.name,
             phone: formattedPhone,
+            email: userData.email || '',
             linkedAccounts: userData.linkedAccounts || []
         };
         setUser(sessionUser);
@@ -113,6 +114,26 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('cloudpocket_user', JSON.stringify(sessionUser));
 
         return sessionUser;
+    };
+
+    // Reset password (forgot password flow)
+    const resetPassword = async (phone, newPassword) => {
+        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+
+        // Get user from Firestore
+        const userDoc = await getDoc(doc(db, "users", formattedPhone));
+
+        if (!userDoc.exists()) {
+            throw new Error('User not found.');
+        }
+
+        // Hash new password and update
+        const newHash = await hashPassword(newPassword);
+        await updateDoc(doc(db, "users", formattedPhone), {
+            passwordHash: newHash
+        });
+
+        return true;
     };
 
     // Link a family member
@@ -218,6 +239,61 @@ export const AuthProvider = ({ children }) => {
         return true;
     };
 
+    // Update User Profile (Name only)
+    const updateProfile = async (newName) => {
+        if (!newName || !newName.trim()) throw new Error("Name cannot be empty.");
+
+        await updateDoc(doc(db, "users", user.phone), {
+            name: newName
+        });
+
+        const updatedUser = { ...user, name: newName };
+        setUser(updatedUser);
+        localStorage.setItem('cloudpocket_user', JSON.stringify(updatedUser));
+        return true;
+    };
+
+    // Change Password
+    const changePassword = async (oldPassword, newPassword) => {
+        // 1. Verify Old Password
+        const userDoc = await getDoc(doc(db, "users", user.phone));
+        if (!userDoc.exists()) throw new Error("User not found.");
+
+        const userData = userDoc.data();
+        const isValid = await verifyPassword(oldPassword, userData.passwordHash);
+
+        if (!isValid) throw new Error("Incorrect old password.");
+
+        // 2. Hash New Password
+        const newPasswordHash = await hashPassword(newPassword);
+
+        // 3. Update Firestore
+        await updateDoc(doc(db, "users", user.phone), {
+            passwordHash: newPasswordHash
+        });
+
+        return true;
+    };
+
+    // Delete Account
+    const deleteAccount = async (password) => {
+        // 1. Verify Password
+        const userDoc = await getDoc(doc(db, "users", user.phone));
+        if (!userDoc.exists()) throw new Error("User not found.");
+
+        const userData = userDoc.data();
+        const isValid = await verifyPassword(password, userData.passwordHash);
+
+        if (!isValid) throw new Error("Incorrect password.");
+
+        // 2. Delete User Document
+        await deleteDoc(doc(db, "users", user.phone));
+
+        // 3. Logout
+        logout();
+        return true;
+    };
+
     const logout = () => {
         setUser(null);
         setViewingUser(null);
@@ -225,7 +301,12 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, viewingUser, setViewingUser, loading, checkUserExists, register, login, logout, linkFamilyMember, unlinkFamilyMember }}>
+        <AuthContext.Provider value={{
+            user, viewingUser, setViewingUser, loading,
+            checkUserExists, register, login, logout, resetPassword,
+            linkFamilyMember, unlinkFamilyMember,
+            updateProfile, changePassword, deleteAccount
+        }}>
             {!loading && children}
         </AuthContext.Provider>
     );

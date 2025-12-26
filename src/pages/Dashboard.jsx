@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebaseConfig';
 import { collection, addDoc, query, where, onSnapshot, deleteDoc, updateDoc, doc } from 'firebase/firestore';
@@ -182,7 +184,7 @@ const Dashboard = () => {
             }
         } catch (err) {
             console.error("Save failed", err);
-            setError('Failed to save. Please try again.');
+            toast.error('Failed to save. Please try again.');
         } finally {
             setUploading(false);
         }
@@ -222,7 +224,7 @@ const Dashboard = () => {
             setLinkNickname('');
         } catch (err) {
             console.error(err);
-            setLinkError(err.message || "Failed to link member.");
+            toast.error(err.message || "Failed to link member.");
         } finally {
             setLinking(false);
         }
@@ -255,13 +257,39 @@ const Dashboard = () => {
     return (
         <div>
             <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <h1 style={{ fontSize: '3rem', fontWeight: 400, letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>
-                    {viewingUser?.phone === user?.phone ? (
-                        <>Welcome {user?.name || 'User'}</>
-                    ) : (
-                        <>Viewing {viewingUser?.name}'s Documents</>
-                    )}
-                </h1>
+                <div>
+                    <h1 style={{ fontSize: '3rem', fontWeight: 400, letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>
+                        {viewingUser?.phone === user?.phone ? (
+                            <>Welcome {user?.name || 'User'}</>
+                        ) : (
+                            <>Viewing {viewingUser?.name}'s Documents</>
+                        )}
+                    </h1>
+
+                    {/* User Details (Phone & Email) */}
+                    <div style={{
+                        fontSize: '0.9rem',
+                        color: 'var(--text-secondary)',
+                        marginTop: '0.5rem',
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem'
+                    }}>
+                        <span>{(() => {
+                            const p = viewingUser?.phone || user?.phone || '';
+                            // Format: +91 98765 43210
+                            const match = p.match(/^(\+91)(\d{5})(\d{5})$/);
+                            return match ? `${match[1]} ${match[2]} ${match[3]}` : p;
+                        })()}</span>
+                        {(viewingUser?.email || user?.email) && (
+                            <>
+                                <span style={{ opacity: 0.5 }}>|</span>
+                                <span>{viewingUser?.email || user?.email}</span>
+                            </>
+                        )}
+                    </div>
+                </div>
 
                 {/* Account Switcher / Linker */}
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -377,101 +405,88 @@ const Dashboard = () => {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', alignItems: 'center', gap: '1rem' }}>
-                {error && <span style={{ color: '#D32F2F', fontSize: '0.9rem' }}>{error}</span>}
+
             </div>
 
             {/* Link Member Modal */}
-            {showLinkModal && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(17, 17, 17, 0.4)', backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
-                }} onClick={() => {
-                    setShowLinkModal(false);
-                    setLinkPhone('');
-                    setLinkEmail('');
-                    setLinkPassword('');
-                    setLinkNickname('');
-                    setLinkError('');
-                }}>
-                    <div style={{
-                        background: '#EFEDE8', padding: '2rem', borderRadius: 'var(--radius)',
-                        width: '90%', maxWidth: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                        border: '1px solid #EBE9E4'
-                    }} onClick={e => e.stopPropagation()}>
-                        <h3 style={{ fontSize: '1.8rem', fontWeight: 400, marginBottom: '1.5rem', textAlign: 'center', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-                            Link Family Member
-                        </h3>
-                        {linkError && <p style={{ color: '#D32F2F', fontSize: '0.9rem', textAlign: 'center', marginBottom: '1rem' }}>{linkError}</p>}
+            <AnimatePresence>
+                {showLinkModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(17, 17, 17, 0.4)', backdropFilter: 'blur(4px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+                        }} onClick={() => {
+                            setShowLinkModal(false);
+                            setLinkPhone('');
+                            setLinkEmail('');
+                            setLinkPassword('');
+                            setLinkNickname('');
+                            setLinkError('');
+                        }}>
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            style={{
+                                background: '#EFEDE8', padding: '2rem', borderRadius: 'var(--radius)',
+                                width: '90%', maxWidth: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                border: '1px solid #EBE9E4'
+                            }} onClick={e => e.stopPropagation()}>
+                            <h3 style={{ fontSize: '1.8rem', fontWeight: 400, marginBottom: '1.5rem', textAlign: 'center', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                                Link Family Member
+                            </h3>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {/* Phone Input with Prefix */}
-                            <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                                <span style={{
-                                    padding: '0.8rem 1rem',
-                                    background: '#E8E6E1',
-                                    border: '1px solid transparent',
-                                    borderRight: 'none',
-                                    borderRadius: '2rem 0 0 2rem',
-                                    color: 'var(--text-secondary)',
-                                    fontWeight: 500,
-                                    display: 'flex',
-                                    alignItems: 'center'
-                                }}>+91</span>
-                                <input
-                                    type="tel"
-                                    placeholder="98765 43210"
-                                    value={linkPhone}
-                                    onChange={(e) => {
-                                        const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                        const formatted = raw.length > 5 ? `${raw.slice(0, 5)} ${raw.slice(5)}` : raw;
-                                        setLinkPhone(formatted);
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.8rem 1.2rem',
-                                        background: '#F7F6F3',
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {/* Phone Input with Prefix */}
+                                <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                                    <span style={{
+                                        padding: '0.8rem 1rem',
+                                        background: '#E8E6E1',
                                         border: '1px solid transparent',
-                                        borderRadius: '0 2rem 2rem 0',
-                                        fontFamily: 'inherit',
-                                        fontSize: '0.95rem',
-                                        flex: 1
-                                    }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !linking && linkPhone && linkPassword) {
-                                            handleLinkMember();
-                                        }
-                                    }}
-                                />
-                            </div>
-                            {/* Email input */}
-                            <input
-                                type="email"
-                                placeholder="Email Address"
-                                value={linkEmail}
-                                onChange={e => setLinkEmail(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.8rem 1.2rem',
-                                    background: '#F7F6F3',
-                                    border: '1px solid transparent',
-                                    borderRadius: '2rem',
-                                    fontFamily: 'inherit',
-                                    fontSize: '0.95rem'
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !linking && linkPhone && linkEmail && linkPassword) {
-                                        handleLinkMember();
-                                    }
-                                }}
-                            />
-                            {/* Password input */}
-                            <div style={{ position: 'relative' }}>
+                                        borderRight: 'none',
+                                        borderRadius: '2rem 0 0 2rem',
+                                        color: 'var(--text-secondary)',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>+91</span>
+                                    <input
+                                        type="tel"
+                                        placeholder="98765 43210"
+                                        value={linkPhone}
+                                        onChange={(e) => {
+                                            const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                            const formatted = raw.length > 5 ? `${raw.slice(0, 5)} ${raw.slice(5)}` : raw;
+                                            setLinkPhone(formatted);
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.8rem 1.2rem',
+                                            background: '#F7F6F3',
+                                            border: '1px solid transparent',
+                                            borderRadius: '0 2rem 2rem 0',
+                                            fontFamily: 'inherit',
+                                            fontSize: '0.95rem',
+                                            flex: 1
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !linking && linkPhone && linkPassword) {
+                                                handleLinkMember();
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                {/* Email input */}
                                 <input
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Enter the Password"
-                                    value={linkPassword}
-                                    onChange={e => setLinkPassword(e.target.value)}
+                                    type="email"
+                                    placeholder="Email Address"
+                                    value={linkEmail}
+                                    onChange={e => setLinkEmail(e.target.value)}
                                     style={{
                                         width: '100%',
                                         padding: '0.8rem 1.2rem',
@@ -479,8 +494,70 @@ const Dashboard = () => {
                                         border: '1px solid transparent',
                                         borderRadius: '2rem',
                                         fontFamily: 'inherit',
-                                        fontSize: '0.95rem',
-                                        marginBottom: 0
+                                        fontSize: '0.95rem'
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !linking && linkPhone && linkEmail && linkPassword) {
+                                            handleLinkMember();
+                                        }
+                                    }}
+                                />
+                                {/* Password input */}
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Enter the Password"
+                                        value={linkPassword}
+                                        onChange={e => setLinkPassword(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.8rem 1.2rem',
+                                            background: '#F7F6F3',
+                                            border: '1px solid transparent',
+                                            borderRadius: '2rem',
+                                            fontFamily: 'inherit',
+                                            fontSize: '0.95rem',
+                                            marginBottom: 0
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !linking && linkPhone && linkPassword) {
+                                                handleLinkMember();
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(prev => !prev)}
+                                        style={{
+                                            position: 'absolute',
+                                            right: '1.5rem',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            color: 'var(--text-secondary)',
+                                            display: 'flex', alignItems: 'center'
+                                        }}
+                                    >
+                                        <span className="material-icons" style={{ fontSize: '1.2rem' }}>
+                                            {showPassword ? 'visibility_off' : 'visibility'}
+                                        </span>
+                                    </button>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Nickname (e.g. Mom, Dad)"
+                                    value={linkNickname}
+                                    onChange={e => setLinkNickname(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.8rem 1.2rem',
+                                        background: '#F7F6F3',
+                                        border: '1px solid transparent',
+                                        borderRadius: '2rem',
+                                        fontFamily: 'inherit',
+                                        fontSize: '0.95rem'
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !linking && linkPhone && linkPassword) {
@@ -489,344 +566,324 @@ const Dashboard = () => {
                                     }}
                                 />
                                 <button
-                                    type="button"
-                                    onClick={() => setShowPassword(prev => !prev)}
+                                    onClick={handleLinkMember}
+                                    disabled={linking || !linkPhone || !linkPassword}
                                     style={{
-                                        position: 'absolute',
-                                        right: '1.5rem',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        background: 'transparent',
+                                        padding: '1rem',
+                                        borderRadius: '2rem',
+                                        background: 'var(--text-primary)',
+                                        color: '#fff',
                                         border: 'none',
                                         cursor: 'pointer',
-                                        color: 'var(--text-secondary)',
-                                        display: 'flex', alignItems: 'center'
+                                        marginTop: '0.5rem',
+                                        fontWeight: 500,
+                                        fontSize: '1rem',
+                                        opacity: (linking || !linkPhone || !linkPassword) ? 0.7 : 1,
+                                        transition: 'opacity 0.2s'
                                     }}
                                 >
-                                    <span className="material-icons" style={{ fontSize: '1.2rem' }}>
-                                        {showPassword ? 'visibility_off' : 'visibility'}
-                                    </span>
+                                    {linking ? 'Linking...' : 'Link Account'}
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setShowLinkModal(false);
+                                        setLinkPhone('');
+                                        setLinkEmail('');
+                                        setLinkPassword('');
+                                        setLinkNickname('');
+                                        setLinkError('');
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.8rem',
+                                        background: 'transparent',
+                                        border: '1px solid transparent',
+                                        borderRadius: '2rem',
+                                        cursor: 'pointer',
+                                        color: 'var(--text-secondary)',
+                                        fontSize: '0.9rem',
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.color = '#111'}
+                                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                                >
+                                    Cancel
                                 </button>
                             </div>
-                            <input
-                                type="text"
-                                placeholder="Nickname (e.g. Mom, Dad)"
-                                value={linkNickname}
-                                onChange={e => setLinkNickname(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.8rem 1.2rem',
-                                    background: '#F7F6F3',
-                                    border: '1px solid transparent',
-                                    borderRadius: '2rem',
-                                    fontFamily: 'inherit',
-                                    fontSize: '0.95rem'
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !linking && linkPhone && linkPassword) {
-                                        handleLinkMember();
-                                    }
-                                }}
-                            />
-                            <button
-                                onClick={handleLinkMember}
-                                disabled={linking || !linkPhone || !linkPassword}
-                                style={{
-                                    padding: '1rem',
-                                    borderRadius: '2rem',
-                                    background: 'var(--text-primary)',
-                                    color: '#fff',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    marginTop: '0.5rem',
-                                    fontWeight: 500,
-                                    fontSize: '1rem',
-                                    opacity: (linking || !linkPhone || !linkPassword) ? 0.7 : 1,
-                                    transition: 'opacity 0.2s'
-                                }}
-                            >
-                                {linking ? 'Linking...' : 'Link Account'}
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    setShowLinkModal(false);
-                                    setLinkPhone('');
-                                    setLinkEmail('');
-                                    setLinkPassword('');
-                                    setLinkNickname('');
-                                    setLinkError('');
-                                }}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.8rem',
-                                    background: 'transparent',
-                                    border: '1px solid transparent',
-                                    borderRadius: '2rem',
-                                    cursor: 'pointer',
-                                    color: 'var(--text-secondary)',
-                                    fontSize: '0.9rem',
-                                }}
-                                onMouseEnter={(e) => e.target.style.color = '#111'}
-                                onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Upload Modal */}
-            {showModal && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(17, 17, 17, 0.4)',
-                    backdropFilter: 'blur(4px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 2000
-                }} onClick={closeModal}>
-                    <div className="modal-content" style={{
-                        background: '#EFEDE8',
-                        padding: '2rem',
-                        borderRadius: 'var(--radius)',
-                        width: '90%',
-                        maxWidth: '480px',
-                        maxHeight: '90vh',
-                        overflowY: 'auto',
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                        border: '1px solid #EBE9E4'
-                    }} onClick={(e) => e.stopPropagation()}>
-                        <h3 style={{ fontSize: '1.8rem', fontWeight: 400, marginBottom: '2rem', letterSpacing: '-0.03em' }}>
-                            {editingDoc ? 'Edit Document' : 'Upload Document'}
-                        </h3>
-
-                        {/* File Picker */}
-                        <label style={{
+            <AnimatePresence>
+                {showModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(17, 17, 17, 0.4)',
+                            backdropFilter: 'blur(4px)',
                             display: 'flex',
-                            flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            border: '1px dashed #CCC',
-                            borderRadius: 'var(--radius)',
-                            padding: '3rem 2rem',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            marginBottom: '1.5rem',
-                            background: '#F7F6F3',
-                            transition: 'all 0.2s'
-                        }}
-                            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#999'}
-                            onMouseLeave={(e) => e.currentTarget.style.borderColor = '#CCC'}
-                        >
-                            <span style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }}>+</span>
-                            {selectedFile ? (
-                                <span style={{ color: 'var(--text-primary)', fontWeight: 500, wordBreak: 'break-all' }}>
-                                    {selectedFile.name}
-                                </span>
-                            ) : (
-                                <span style={{ color: 'var(--text-secondary)' }}>Click to select file</span>
-                            )}
-                            <input
-                                type="file"
-                                accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                                capture="environment"
-                                style={{ display: 'none' }}
-                                onChange={handleFileSelect}
-                            />
-                        </label>
+                            zIndex: 2000
+                        }} onClick={closeModal}>
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="modal-content"
+                            style={{
+                                background: '#EFEDE8',
+                                padding: '2rem',
+                                borderRadius: 'var(--radius)',
+                                width: '90%',
+                                maxWidth: '480px',
+                                maxHeight: '90vh',
+                                overflowY: 'auto',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                border: '1px solid #EBE9E4'
+                            }} onClick={(e) => e.stopPropagation()}>
+                            <h3 style={{ fontSize: '1.8rem', fontWeight: 400, marginBottom: '2rem', letterSpacing: '-0.03em' }}>
+                                {editingDoc ? 'Edit Document' : 'Upload Document'}
+                            </h3>
 
-                        {/* File Name Input */}
-                        <div style={{ marginBottom: '2.5rem' }}>
-                            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                                Name
+                            {/* File Picker */}
+                            <label style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px dashed #CCC',
+                                borderRadius: 'var(--radius)',
+                                padding: '3rem 2rem',
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                marginBottom: '1.5rem',
+                                background: '#F7F6F3',
+                                transition: 'all 0.2s'
+                            }}
+                                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#999'}
+                                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#CCC'}
+                            >
+                                <span style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }}>+</span>
+                                {selectedFile ? (
+                                    <span style={{ color: 'var(--text-primary)', fontWeight: 500, wordBreak: 'break-all' }}>
+                                        {selectedFile.name}
+                                    </span>
+                                ) : (
+                                    <span style={{ color: 'var(--text-secondary)' }}>Click to select file</span>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                    capture="environment"
+                                    style={{ display: 'none' }}
+                                    onChange={handleFileSelect}
+                                />
                             </label>
-                            <input
-                                type="text"
-                                placeholder={selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, "") : 'Document Name'}
-                                value={fileName}
-                                onChange={(e) => setFileName(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '1rem',
-                                    border: '1px solid transparent',
-                                    borderRadius: '2rem',
-                                    background: '#F7F6F3',
-                                    fontSize: '1rem',
-                                    color: 'var(--text-primary)'
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        const isDisabled = uploading || (editingDoc ? (fileName === editingDoc.name && selectedCategory === editingDoc.category && !selectedFile) : !selectedFile);
-                                        if (!isDisabled) {
-                                            handleSave();
+
+                            {/* File Name Input */}
+                            <div style={{ marginBottom: '2.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                                    Name
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder={selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, "") : 'Document Name'}
+                                    value={fileName}
+                                    onChange={(e) => setFileName(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        border: '1px solid transparent',
+                                        borderRadius: '2rem',
+                                        background: '#F7F6F3',
+                                        fontSize: '1rem',
+                                        color: 'var(--text-primary)'
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const isDisabled = uploading || (editingDoc ? (fileName === editingDoc.name && selectedCategory === editingDoc.category && !selectedFile) : !selectedFile);
+                                            if (!isDisabled) {
+                                                handleSave();
+                                            }
                                         }
-                                    }
-                                }}
-                            />
-                        </div>
-
-                        {/* Category Selector */}
-                        <div style={{ marginBottom: '2.5rem' }}>
-                            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                                Category
-                            </label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', position: 'relative' }}>
-                                {/* Modal Sliding Pill */}
-                                <div style={{
-                                    position: 'absolute',
-                                    left: modalPillStyle.left,
-                                    top: modalPillStyle.top,
-                                    width: modalPillStyle.width,
-                                    height: modalPillStyle.height,
-                                    background: 'var(--text-primary)',
-                                    borderRadius: '2rem',
-                                    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                                    zIndex: 0
-                                }} />
-
-                                {categories.map((cat, index) => (
-                                    <button
-                                        key={cat}
-                                        className="modal-category-btn"
-                                        ref={el => modalTabsRef.current[index] = el}
-                                        type="button"
-                                        onClick={() => setSelectedCategory(cat)}
-                                        style={{
-                                            padding: '0.4rem 0.8rem',
-                                            borderRadius: '2rem',
-                                            border: 'none',
-                                            background: 'transparent',
-                                            color: selectedCategory === cat ? '#fff' : 'var(--text-secondary)',
-                                            fontSize: '0.85rem',
-                                            cursor: 'pointer',
-                                            position: 'relative',
-                                            zIndex: 1,
-                                            transition: 'color 0.2s',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.05em'
-                                        }}
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
+                                    }}
+                                />
                             </div>
-                        </div>
 
-                        {/* Actions */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <button
-                                onClick={handleSave}
-                                disabled={
-                                    uploading ||
-                                    (editingDoc
-                                        ? (fileName === editingDoc.name && selectedCategory === editingDoc.category && !selectedFile)
-                                        : !selectedFile)
-                                }
-                                style={{
-                                    width: '100%',
-                                    padding: '1.2rem',
-                                    background: 'var(--text-primary)',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '2rem',
-                                    cursor: 'pointer',
-                                    fontSize: '0.95rem',
-                                    opacity: (uploading || (editingDoc ? (fileName === editingDoc.name && selectedCategory === editingDoc.category && !selectedFile) : !selectedFile)) ? 0.6 : 1,
-                                    transition: 'opacity 0.2s'
-                                }}
-                            >
-                                {uploading ? 'Saving...' : (editingDoc ? 'Save Changes' : 'Upload File')}
-                            </button>
-                            <button
-                                onClick={closeModal}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.8rem',
-                                    background: 'transparent',
-                                    border: '1px solid transparent', // Remove border for clean look if below
-                                    borderRadius: '2rem',
-                                    cursor: 'pointer',
-                                    color: 'var(--text-secondary)',
-                                    fontSize: '0.9rem',
-                                }}
-                                onMouseEnter={(e) => e.target.style.color = '#111'}
-                                onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            {/* Category Selector */}
+                            <div style={{ marginBottom: '2.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                                    Category
+                                </label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', position: 'relative' }}>
+                                    {/* Modal Sliding Pill */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: modalPillStyle.left,
+                                        top: modalPillStyle.top,
+                                        width: modalPillStyle.width,
+                                        height: modalPillStyle.height,
+                                        background: 'var(--text-primary)',
+                                        borderRadius: '2rem',
+                                        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                                        zIndex: 0
+                                    }} />
+
+                                    {categories.map((cat, index) => (
+                                        <button
+                                            key={cat}
+                                            className="modal-category-btn"
+                                            ref={el => modalTabsRef.current[index] = el}
+                                            type="button"
+                                            onClick={() => setSelectedCategory(cat)}
+                                            style={{
+                                                padding: '0.4rem 0.8rem',
+                                                borderRadius: '2rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                color: selectedCategory === cat ? '#fff' : 'var(--text-secondary)',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                position: 'relative',
+                                                zIndex: 1,
+                                                transition: 'color 0.2s',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em'
+                                            }}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={
+                                        uploading ||
+                                        (editingDoc
+                                            ? (fileName === editingDoc.name && selectedCategory === editingDoc.category && !selectedFile)
+                                            : !selectedFile)
+                                    }
+                                    style={{
+                                        width: '100%',
+                                        padding: '1.2rem',
+                                        background: 'var(--text-primary)',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '2rem',
+                                        cursor: 'pointer',
+                                        fontSize: '0.95rem',
+                                        opacity: (uploading || (editingDoc ? (fileName === editingDoc.name && selectedCategory === editingDoc.category && !selectedFile) : !selectedFile)) ? 0.6 : 1,
+                                        transition: 'opacity 0.2s'
+                                    }}
+                                >
+                                    {uploading ? 'Saving...' : (editingDoc ? 'Save Changes' : 'Upload File')}
+                                </button>
+                                <button
+                                    onClick={closeModal}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.8rem',
+                                        background: 'transparent',
+                                        border: '1px solid transparent', // Remove border for clean look if below
+                                        borderRadius: '2rem',
+                                        cursor: 'pointer',
+                                        color: 'var(--text-secondary)',
+                                        fontSize: '0.9rem',
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.color = '#111'}
+                                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Delete Confirmation Modal */}
-            {deleteConfirmation && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(17, 17, 17, 0.4)',
-                    backdropFilter: 'blur(4px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1100
-                }} onClick={() => setDeleteConfirmation(null)}>
-                    <div style={{
-                        background: '#EFEDE8',
-                        padding: '2rem',
-                        borderRadius: '1.5rem',
-                        width: '90%',
-                        maxWidth: '380px',
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                        border: '1px solid #EBE9E4',
-                        textAlign: 'center'
-                    }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ width: '50px', height: '50px', background: '#FBE8E8', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                            <span className="material-icons" style={{ color: '#D32F2F', fontSize: '1.5rem' }}>delete_outline</span>
-                        </div>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.5rem', color: '#111' }}>Delete Document?</h3>
-                        <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1.5rem', lineHeight: '1.4' }}>
-                            Are you sure you want to delete this document? This action cannot be undone.
-                        </p>
-                        <div style={{ display: 'flex', gap: '0.8rem' }}>
-                            <button
-                                onClick={() => setDeleteConfirmation(null)}
-                                style={{
-                                    flex: 1,
-                                    padding: '0.9rem',
-                                    borderRadius: '2rem',
-                                    border: '1px solid #ddd',
-                                    background: 'transparent',
-                                    color: '#555',
-                                    fontWeight: 500,
-                                    cursor: 'pointer'
-                                }}>
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                style={{
-                                    flex: 1,
-                                    padding: '0.9rem',
-                                    borderRadius: '2rem',
-                                    border: 'none',
-                                    background: '#D32F2F',
-                                    color: '#fff',
-                                    fontWeight: 500,
-                                    cursor: 'pointer'
-                                }}>
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <AnimatePresence>
+                {deleteConfirmation && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(17, 17, 17, 0.4)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1100
+                        }} onClick={() => setDeleteConfirmation(null)}>
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            style={{
+                                background: '#EFEDE8',
+                                padding: '2rem',
+                                borderRadius: '1.5rem',
+                                width: '90%',
+                                maxWidth: '380px',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                border: '1px solid #EBE9E4',
+                                textAlign: 'center'
+                            }} onClick={(e) => e.stopPropagation()}>
+                            <div style={{ width: '50px', height: '50px', background: '#FBE8E8', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                <span className="material-icons" style={{ color: '#D32F2F', fontSize: '1.5rem' }}>delete_outline</span>
+                            </div>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.5rem', color: '#111' }}>Delete Document?</h3>
+                            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+                                Are you sure you want to delete this document? This action cannot be undone.
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.8rem' }}>
+                                <button
+                                    onClick={() => setDeleteConfirmation(null)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.9rem',
+                                        borderRadius: '2rem',
+                                        border: '1px solid #ddd',
+                                        background: 'transparent',
+                                        color: '#555',
+                                        fontWeight: 500,
+                                        cursor: 'pointer'
+                                    }}>
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.9rem',
+                                        borderRadius: '2rem',
+                                        border: 'none',
+                                        background: '#D32F2F',
+                                        color: '#fff',
+                                        fontWeight: 500,
+                                        cursor: 'pointer'
+                                    }}>
+                                    Delete
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Document Grid */}
             <div style={{
@@ -1038,125 +1095,130 @@ const Dashboard = () => {
                 </div>
             )}
             {/* Custom Document Viewer Modal */}
-            {previewDoc && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.85)',
-                    backdropFilter: 'blur(8px)',
-                    zIndex: 2000,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    animation: 'fadeIn 0.2s ease-out'
-                }} onClick={() => setPreviewDoc(null)}>
+            <AnimatePresence>
+                {previewDoc && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(0, 0, 0, 0.85)',
+                            backdropFilter: 'blur(8px)',
+                            zIndex: 2000,
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }} onClick={() => setPreviewDoc(null)}>
 
-                    {/* Viewer Header */}
-                    <div style={{
-                        padding: '1.2rem 2rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                        backdropFilter: 'blur(10px)'
-                    }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <span className="material-icons" style={{ color: '#fff' }}>
-                                {previewDoc.type === 'pdf' ? 'picture_as_pdf' : 'image'}
-                            </span>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <h3 style={{ margin: 0, color: '#fff', fontSize: '1rem', fontWeight: 500 }}>
-                                    {previewDoc.displayName || previewDoc.name}
-                                </h3>
-                                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
-                                    {previewDoc.type.toUpperCase()} • {previewDoc.size}
+                        {/* Viewer Header */}
+                        <div style={{
+                            padding: '1.2rem 2rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                            backdropFilter: 'blur(10px)'
+                        }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <span className="material-icons" style={{ color: '#fff' }}>
+                                    {previewDoc.type === 'pdf' ? 'picture_as_pdf' : 'image'}
                                 </span>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1rem', fontWeight: 500 }}>
+                                        {previewDoc.displayName || previewDoc.name}
+                                    </h3>
+                                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
+                                        {previewDoc.type.toUpperCase()} • {previewDoc.size}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <a
+                                    href={previewDoc.url.replace('/upload/', '/upload/fl_attachment/')}
+                                    download
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.6rem 1.2rem',
+                                        borderRadius: '2rem',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        color: '#fff',
+                                        textDecoration: 'none',
+                                        fontSize: '0.9rem',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onClick={e => e.stopPropagation()}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                >
+                                    <span className="material-icons" style={{ fontSize: '1.2rem' }}>download</span>
+                                    Download
+                                </a>
+                                <button
+                                    onClick={() => setPreviewDoc(null)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#fff',
+                                        cursor: 'pointer',
+                                        padding: '0.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        borderRadius: '50%',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <span className="material-icons" style={{ fontSize: '1.5rem' }}>close</span>
+                                </button>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <a
-                                href={previewDoc.url.replace('/upload/', '/upload/fl_attachment/')}
-                                download
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    padding: '0.6rem 1.2rem',
-                                    borderRadius: '2rem',
-                                    background: 'rgba(255,255,255,0.1)',
-                                    color: '#fff',
-                                    textDecoration: 'none',
-                                    fontSize: '0.9rem',
-                                    transition: 'background 0.2s'
-                                }}
-                                onClick={e => e.stopPropagation()}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                            >
-                                <span className="material-icons" style={{ fontSize: '1.2rem' }}>download</span>
-                                Download
-                            </a>
-                            <button
-                                onClick={() => setPreviewDoc(null)}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    padding: '0.5rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    borderRadius: '50%',
-                                    transition: 'background 0.2s'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                            >
-                                <span className="material-icons" style={{ fontSize: '1.5rem' }}>close</span>
-                            </button>
+                        {/* Viewer Content */}
+                        <div style={{
+                            flex: 1,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            padding: '2rem',
+                            overflow: 'hidden'
+                        }}>
+                            {previewDoc.type === 'pdf' || previewDoc.url.endsWith('.pdf') ? (
+                                <iframe
+                                    src={previewDoc.url.replace('http://', 'https://') + '#navpanes=0&toolbar=1&view=FitH'} // Sidebar closed, Toolbar open
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        maxWidth: '1000px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: '#fff',
+                                        boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                                    }}
+                                    title="Document Preview"
+                                />
+                            ) : (
+                                <img
+                                    src={previewDoc.url}
+                                    alt="Preview"
+                                    style={{
+                                        maxWidth: '100%',
+                                        maxHeight: '85vh',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                                        objectFit: 'contain'
+                                    }}
+                                />
+                            )}
                         </div>
-                    </div>
-
-                    {/* Viewer Content */}
-                    <div style={{
-                        flex: 1,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        padding: '2rem',
-                        overflow: 'hidden'
-                    }}>
-                        {previewDoc.type === 'pdf' || previewDoc.url.endsWith('.pdf') ? (
-                            <iframe
-                                src={previewDoc.url.replace('http://', 'https://') + '#navpanes=0&toolbar=1&view=FitH'} // Sidebar closed, Toolbar open
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    maxWidth: '1000px',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: '#fff',
-                                    boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
-                                }}
-                                title="Document Preview"
-                            />
-                        ) : (
-                            <img
-                                src={previewDoc.url}
-                                alt="Preview"
-                                style={{
-                                    maxWidth: '100%',
-                                    maxHeight: '85vh',
-                                    borderRadius: '8px',
-                                    boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                                    objectFit: 'contain'
-                                }}
-                            />
-                        )}
-                    </div>
-                </div>
-            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
 
         </div>

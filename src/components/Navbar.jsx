@@ -1,8 +1,12 @@
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 
 const Navbar = () => {
+    const navigate = useNavigate();
     const { user, logout, viewingUser, unlinkFamilyMember, setViewingUser } = useAuth();
 
     // Unlink Member State
@@ -11,6 +15,12 @@ const Navbar = () => {
     const [unlinkError, setUnlinkError] = useState('');
     const [unlinking, setUnlinking] = useState(false);
     const [showUnlinkPassword, setShowUnlinkPassword] = useState(false);
+
+    // Logout and redirect to login page (with history replacement to prevent back navigation)
+    const handleLogout = () => {
+        logout();
+        navigate('/login', { replace: true });
+    };
 
     const handleUnlinkMember = async () => {
         try {
@@ -22,7 +32,7 @@ const Navbar = () => {
             setViewingUser(user); // Return to self
         } catch (err) {
             console.error(err);
-            setUnlinkError(err.message || "Failed to remove member.");
+            toast.error(err.message || "Failed to remove member.");
         } finally {
             setUnlinking(false);
         }
@@ -46,8 +56,20 @@ const Navbar = () => {
                     alignItems: 'center',
                     gap: '0.5rem'
                 }}>
-                    <img src={logo} alt="CloudPocket" style={{ height: '24px', width: 'auto' }} />
-                    CloudPocket
+                    <motion.img
+                        layoutId="shared-logo"
+                        src={logo}
+                        alt="CloudPocket"
+                        style={{ height: '24px', width: 'auto' }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                    <motion.span
+                        layoutId="shared-title"
+                        style={{ fontWeight: 500, fontSize: '1rem', letterSpacing: '-0.01em' }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    >
+                        CloudPocket
+                    </motion.span>
                 </div>
                 {user && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
@@ -83,7 +105,7 @@ const Navbar = () => {
                             </button>
                         )}
                         <button
-                            onClick={logout}
+                            onClick={handleLogout}
                             style={{
                                 background: 'transparent',
                                 border: 'none',
@@ -109,117 +131,154 @@ const Navbar = () => {
                         >
                             <span className="material-icons">logout</span>
                         </button>
+                        <button
+                            onClick={() => navigate('/settings')}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                padding: '0.5rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '50%',
+                                transition: 'background 0.2s, color 0.2s',
+                                height: '36px', width: '36px'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(0,0,0,0.05)';
+                                e.currentTarget.style.color = 'var(--text-primary)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                            }}
+                            title="Settings"
+                        >
+                            <span className="material-icons">settings</span>
+                        </button>
                     </div>
                 )}
             </nav>
 
             {/* Unlink Confirmation Modal */}
-            {showUnlinkModal && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(17, 17, 17, 0.4)', backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
-                }} onClick={() => {
-                    setShowUnlinkModal(false);
-                    setUnlinkPassword('');
-                    setUnlinkError('');
-                }}>
-                    <div style={{
-                        background: '#EFEDE8', padding: '2rem', borderRadius: 'var(--radius)',
-                        width: '90%', maxWidth: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                        border: '1px solid #EBE9E4'
-                    }} onClick={e => e.stopPropagation()}>
-                        <div style={{ width: '50px', height: '50px', background: '#FBE8E8', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-                            <span className="material-icons" style={{ color: '#D32F2F', fontSize: '1.5rem' }}>link_off</span>
-                        </div>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.8rem', textAlign: 'center', color: 'var(--text-primary)' }}>
-                            Remove {viewingUser.name}?
-                        </h3>
-                        {unlinkError && <p style={{ color: '#D32F2F', fontSize: '0.9rem', textAlign: 'center', marginBottom: '1rem' }}>{unlinkError}</p>}
+            <AnimatePresence>
+                {showUnlinkModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(17, 17, 17, 0.4)', backdropFilter: 'blur(4px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+                        }} onClick={() => {
+                            setShowUnlinkModal(false);
+                            setUnlinkPassword('');
+                            setUnlinkError('');
+                        }}>
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            style={{
+                                background: '#EFEDE8', padding: '2rem', borderRadius: 'var(--radius)',
+                                width: '90%', maxWidth: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                border: '1px solid #EBE9E4'
+                            }} onClick={e => e.stopPropagation()}>
+                            <div style={{ width: '50px', height: '50px', background: '#FBE8E8', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                                <span className="material-icons" style={{ color: '#D32F2F', fontSize: '1.5rem' }}>link_off</span>
+                            </div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.8rem', textAlign: 'center', color: 'var(--text-primary)' }}>
+                                Remove {viewingUser.name}?
+                            </h3>
 
-                        <p style={{ fontSize: '0.9rem', color: '#666', textAlign: 'center', marginBottom: '1.5rem', lineHeight: 1.4 }}>
-                            This will remove their access from your account. Please enter your password to confirm.
-                        </p>
 
-                        <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
-                            <input
-                                type={showUnlinkPassword ? "text" : "password"}
-                                placeholder="Enter your password"
-                                value={unlinkPassword}
-                                onChange={e => setUnlinkPassword(e.target.value)}
+                            <p style={{ fontSize: '0.9rem', color: '#666', textAlign: 'center', marginBottom: '1.5rem', lineHeight: 1.4 }}>
+                                This will remove their access from your account. Please enter your password to confirm.
+                            </p>
+
+                            <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
+                                <input
+                                    type={showUnlinkPassword ? "text" : "password"}
+                                    placeholder="Enter your password"
+                                    value={unlinkPassword}
+                                    onChange={e => setUnlinkPassword(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.8rem 1.2rem',
+                                        background: '#F7F6F3',
+                                        border: '1px solid transparent',
+                                        borderRadius: '2rem',
+                                        fontFamily: 'inherit',
+                                        fontSize: '0.95rem'
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !unlinking && unlinkPassword) {
+                                            handleUnlinkMember();
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowUnlinkPassword(prev => !prev)}
+                                    style={{
+                                        position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
+                                        background: 'transparent', border: 'none', cursor: 'pointer', color: '#888',
+                                        display: 'flex', alignItems: 'center'
+                                    }}
+                                >
+                                    <span className="material-icons" style={{ fontSize: '1.2rem' }}>{showUnlinkPassword ? 'visibility_off' : 'visibility'}</span>
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={handleUnlinkMember}
+                                disabled={unlinking || !unlinkPassword}
                                 style={{
                                     width: '100%',
-                                    padding: '0.8rem 1.2rem',
-                                    background: '#F7F6F3',
-                                    border: '1px solid transparent',
+                                    padding: '1rem',
                                     borderRadius: '2rem',
-                                    fontFamily: 'inherit',
-                                    fontSize: '0.95rem'
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !unlinking && unlinkPassword) {
-                                        handleUnlinkMember();
-                                    }
-                                }}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowUnlinkPassword(prev => !prev)}
-                                style={{
-                                    position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
-                                    background: 'transparent', border: 'none', cursor: 'pointer', color: '#888',
-                                    display: 'flex', alignItems: 'center'
+                                    background: '#D32F2F', // Red for destructive action
+                                    color: '#fff',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontWeight: 500,
+                                    fontSize: '1rem',
+                                    opacity: (unlinking || !unlinkPassword) ? 0.7 : 1,
+                                    marginBottom: '0.5rem',
+                                    transition: 'opacity 0.2s'
                                 }}
                             >
-                                <span className="material-icons" style={{ fontSize: '1.2rem' }}>{showUnlinkPassword ? 'visibility_off' : 'visibility'}</span>
+                                {unlinking ? 'Removing...' : 'Remove Member'}
                             </button>
-                        </div>
 
-                        <button
-                            onClick={handleUnlinkMember}
-                            disabled={unlinking || !unlinkPassword}
-                            style={{
-                                width: '100%',
-                                padding: '1rem',
-                                borderRadius: '2rem',
-                                background: '#D32F2F', // Red for destructive action
-                                color: '#fff',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                                fontSize: '1rem',
-                                opacity: (unlinking || !unlinkPassword) ? 0.7 : 1,
-                                marginBottom: '0.5rem',
-                                transition: 'opacity 0.2s'
-                            }}
-                        >
-                            {unlinking ? 'Removing...' : 'Remove Member'}
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setShowUnlinkModal(false);
-                                setUnlinkPassword('');
-                                setUnlinkError('');
-                            }}
-                            style={{
-                                width: '100%',
-                                padding: '0.8rem',
-                                background: 'transparent',
-                                border: '1px solid transparent',
-                                borderRadius: '2rem',
-                                cursor: 'pointer',
-                                color: 'var(--text-secondary)',
-                                fontSize: '0.9rem',
-                            }}
-                            onMouseEnter={(e) => e.target.style.color = '#111'}
-                            onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
+                            <button
+                                onClick={() => {
+                                    setShowUnlinkModal(false);
+                                    setUnlinkPassword('');
+                                    setUnlinkError('');
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem',
+                                    background: 'transparent',
+                                    border: '1px solid transparent',
+                                    borderRadius: '2rem',
+                                    cursor: 'pointer',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '0.9rem',
+                                }}
+                                onMouseEnter={(e) => e.target.style.color = '#111'}
+                                onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                            >
+                                Cancel
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 };

@@ -8,7 +8,7 @@ const Layout = ({ children }) => {
             flexDirection: 'column'
         }}>
             <Navbar />
-            <main style={{ flex: 1, paddingBottom: '12rem' }}>
+            <main style={{ flex: 1, paddingBottom: '3rem' }}>
                 {children}
             </main>
             <footer style={{

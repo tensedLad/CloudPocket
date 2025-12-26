@@ -348,8 +348,23 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setViewingUser(null);
         setSessionId(null);
+
+        // Clear all CloudPocket data from localStorage
         localStorage.removeItem('cloudpocket_user');
         localStorage.removeItem('cloudpocket_session');
+        localStorage.removeItem('cloudpocket_lockout');
+
+        // Clear sessionStorage completely
+        sessionStorage.clear();
+
+        // Clear any cached data (optional but recommended for shared devices)
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    caches.delete(name);
+                });
+            });
+        }
     };
 
     return (

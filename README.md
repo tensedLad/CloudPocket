@@ -4,15 +4,21 @@ CloudPocket is a secure, personal document management system designed to help us
 
 ## ✨ Features
 
--   **� Email OTP Verification**: Secure signup with email verification via EmailJS (free tier: 200 emails/month).
+-   **📧 Email OTP Verification**: Secure signup with email verification via EmailJS (free tier: 200 emails/month).
 -   **🔐 Smart Login Flow**: Phone + Email combination for account identification with strict validation.
--   **�📁 Categorized Storage**: Organize documents into 13+ categories (Identity, Education, Medical, Financial, etc.).
+-   **🔑 Forgot Password**: OTP-based password reset flow for existing users.
+-   **📁 Categorized Storage**: Organize documents into 13+ categories (Identity, Education, Medical, Financial, etc.).
 -   **👨‍👩‍👧‍👦 Family Linking**: Securely link family members using Phone + Email + Password verification.
 -   **👁️ Read-Only Sharing**: Linked members can view and download documents, but cannot edit or delete.
--   **� Secure Unlinking**: Easily manage and remove linked access with password verification.
+-   **🔓 Secure Unlinking**: Easily manage and remove linked access with password verification.
 -   **🖼️ Rich Document Previews**: Built-in viewer for images and PDFs.
--   **� Mobile Camera Upload**: Direct camera capture for document uploads on mobile devices.
+-   **📷 Mobile Camera Upload**: Direct camera capture for document uploads on mobile devices.
 -   **📱 Responsive Design**: Optimized for mobile, tablet, and desktop with smooth UI transitions.
+-   **🏠 Landing Page**: Beautiful landing page with animated hero section and feature highlights.
+-   **⚙️ Settings Page**: Manage profile, change password, and delete account with secure modals.
+-   **🔔 Toast Notifications**: Clean, themed toast messages for all user feedback (react-hot-toast).
+-   **✨ Smooth Animations**: Framer Motion powered modal animations and page transitions.
+-   **👁️ Password Visibility Toggle**: Eye icons on all password fields for better UX.
 
 ## 🛠️ Tech Stack
 

@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { generateOTP, sendOTP } from '../utils/otpService';
+import { generateOTP, sendOTP, verifyOTP } from '../utils/otpService';
+
+// Rate limiting constants
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 const Login = () => {
     const { checkUserExists, register, login, resetPassword } = useAuth();
@@ -15,6 +19,7 @@ const Login = () => {
     const [step, setStep] = useState('phone'); // 'phone', 'verify', 'register', 'password', 'forgotVerify', 'resetPassword'
     const [otp, setOtp] = useState('');
     const [generatedOtp, setGeneratedOtp] = useState('');
+    const [otpData, setOtpData] = useState(null); // For server-side OTP: { otpHash, expiresAt, serverSide }
     const [timer, setTimer] = useState(0);
     const [error, setError] = useState(''); // Keep for inline display if needed
     const [loading, setLoading] = useState(false);
@@ -22,6 +27,61 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [userEmail, setUserEmail] = useState(''); // Store registered email for forgot password
+    const [isLockedOut, setIsLockedOut] = useState(false);
+    const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
+    // Check and update lockout status
+    useEffect(() => {
+        const checkLockout = () => {
+            const lockoutData = localStorage.getItem('cloudpocket_lockout');
+            if (lockoutData) {
+                const { until, attempts } = JSON.parse(lockoutData);
+                if (until && Date.now() < until) {
+                    setIsLockedOut(true);
+                    setLockoutRemaining(Math.ceil((until - Date.now()) / 1000));
+                } else if (until && Date.now() >= until) {
+                    // Lockout expired, reset
+                    localStorage.removeItem('cloudpocket_lockout');
+                    setIsLockedOut(false);
+                    setLockoutRemaining(0);
+                }
+            }
+        };
+
+        checkLockout();
+        const interval = setInterval(checkLockout, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Track failed login attempt
+    const trackFailedAttempt = () => {
+        const lockoutData = localStorage.getItem('cloudpocket_lockout');
+        let attempts = 1;
+
+        if (lockoutData) {
+            const data = JSON.parse(lockoutData);
+            attempts = (data.attempts || 0) + 1;
+        }
+
+        if (attempts >= MAX_LOGIN_ATTEMPTS) {
+            // Lock out the user
+            const until = Date.now() + LOCKOUT_DURATION_MS;
+            localStorage.setItem('cloudpocket_lockout', JSON.stringify({ attempts, until }));
+            setIsLockedOut(true);
+            setLockoutRemaining(Math.ceil(LOCKOUT_DURATION_MS / 1000));
+            toast.error(`Too many failed attempts. Please try again in 5 minutes.`);
+        } else {
+            localStorage.setItem('cloudpocket_lockout', JSON.stringify({ attempts }));
+            toast.error(`Incorrect password. ${MAX_LOGIN_ATTEMPTS - attempts} attempts remaining.`);
+        }
+    };
+
+    // Reset attempts on successful login
+    const resetAttempts = () => {
+        localStorage.removeItem('cloudpocket_lockout');
+        setIsLockedOut(false);
+        setLockoutRemaining(0);
+    };
 
     // Timer logic
     useEffect(() => {
@@ -36,14 +96,25 @@ const Login = () => {
         setLoading(true);
         setError('');
         try {
-            const code = generateOTP();
-            console.log('Sending OTP to', emailAddr, 'Code:', code);
+            // Use server-side OTP service
+            const result = await sendOTP(emailAddr);
 
-            await sendOTP(emailAddr, code);
-
-            setGeneratedOtp(code);
-            setTimer(30);
-            setStep('verify');
+            if (result.success) {
+                if (result.serverSide) {
+                    // Store server-side OTP data for verification
+                    setOtpData({
+                        otpHash: result.otpHash,
+                        expiresAt: result.expiresAt,
+                        serverSide: true
+                    });
+                } else {
+                    // Client-side fallback (local dev)
+                    setGeneratedOtp(result.otp);
+                    setOtpData({ serverSide: false });
+                }
+                setTimer(30);
+                setStep('verify');
+            }
         } catch (err) {
             console.error(err);
             toast.error('Failed to send OTP to your email. Please try again.');
@@ -52,13 +123,33 @@ const Login = () => {
         }
     };
 
-    const handleVerifyOTP = (e) => {
+    const handleVerifyOTP = async (e) => {
         e.preventDefault();
-        if (otp === generatedOtp) {
-            setStep('register');
-            setError('');
-        } else {
-            toast.error('Incorrect OTP. Please check your email.');
+        setLoading(true);
+
+        try {
+            const result = await verifyOTP(
+                otp,
+                otpData?.otpHash,
+                otpData?.expiresAt,
+                generatedOtp,
+                otpData?.serverSide
+            );
+
+            if (result.valid) {
+                setStep('register');
+                setError('');
+            } else {
+                if (result.expired) {
+                    toast.error('OTP has expired. Please request a new one.');
+                } else {
+                    toast.error('Incorrect OTP. Please check your email.');
+                }
+            }
+        } catch (err) {
+            toast.error('Verification failed. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -148,8 +239,16 @@ const Login = () => {
         e.preventDefault();
         setError('');
 
-        if (password.length < 4) {
-            toast.error('Password must be at least 4 characters');
+        // Check if locked out
+        if (isLockedOut) {
+            const minutes = Math.floor(lockoutRemaining / 60);
+            const seconds = lockoutRemaining % 60;
+            toast.error(`Account locked. Try again in ${minutes}:${seconds.toString().padStart(2, '0')}`);
+            return;
+        }
+
+        if (password.length < 8) {
+            toast.error('Password must be at least 8 characters');
             return;
         }
 
@@ -157,8 +256,13 @@ const Login = () => {
         try {
             const cleanPhone = phone.replace(/\s/g, '');
             await login(cleanPhone, password);
+            resetAttempts(); // Clear failed attempts on successful login
         } catch (err) {
-            toast.error(err.message || 'Login failed');
+            if (err.message === 'Incorrect password.') {
+                trackFailedAttempt();
+            } else {
+                toast.error(err.message || 'Login failed');
+            }
         } finally {
             setLoading(false);
         }
@@ -172,8 +276,8 @@ const Login = () => {
             toast.error('Please enter your name');
             return;
         }
-        if (password.length < 4) {
-            toast.error('Password must be at least 4 characters');
+        if (password.length < 8) {
+            toast.error('Password must be at least 8 characters');
             return;
         }
 
@@ -192,12 +296,23 @@ const Login = () => {
     const handleForgotPassword = async () => {
         setSendingResetOtp(true);
         try {
-            const code = generateOTP();
-            console.log('Sending reset OTP to', userEmail, 'Code:', code);
-            await sendOTP(userEmail, code);
-            setGeneratedOtp(code);
-            setTimer(30);
-            setStep('forgotVerify');
+            // Use server-side OTP service
+            const result = await sendOTP(userEmail);
+
+            if (result.success) {
+                if (result.serverSide) {
+                    setOtpData({
+                        otpHash: result.otpHash,
+                        expiresAt: result.expiresAt,
+                        serverSide: true
+                    });
+                } else {
+                    setGeneratedOtp(result.otp);
+                    setOtpData({ serverSide: false });
+                }
+                setTimer(30);
+                setStep('forgotVerify');
+            }
         } catch (err) {
             console.error(err);
             toast.error('Failed to send OTP. Please try again.');
@@ -207,13 +322,33 @@ const Login = () => {
     };
 
     // Forgot Password - Verify OTP
-    const handleVerifyForgotOTP = (e) => {
+    const handleVerifyForgotOTP = async (e) => {
         e.preventDefault();
-        if (otp === generatedOtp) {
-            setStep('resetPassword');
-            setOtp('');
-        } else {
-            toast.error('Incorrect OTP. Please check your email.');
+        setLoading(true);
+
+        try {
+            const result = await verifyOTP(
+                otp,
+                otpData?.otpHash,
+                otpData?.expiresAt,
+                generatedOtp,
+                otpData?.serverSide
+            );
+
+            if (result.valid) {
+                setStep('resetPassword');
+                setOtp('');
+            } else {
+                if (result.expired) {
+                    toast.error('OTP has expired. Please request a new one.');
+                } else {
+                    toast.error('Incorrect OTP. Please check your email.');
+                }
+            }
+        } catch (err) {
+            toast.error('Verification failed. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -221,8 +356,8 @@ const Login = () => {
     const handleResetPassword = async (e) => {
         e.preventDefault();
 
-        if (newPassword.length < 4) {
-            toast.error('Password must be at least 4 characters');
+        if (newPassword.length < 8) {
+            toast.error('Password must be at least 8 characters');
             return;
         }
 

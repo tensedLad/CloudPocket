@@ -85,6 +85,48 @@ const LandingPage = () => {
             >
                 Get Started
             </motion.button>
+
+            {/* Footer with legal links */}
+            <div style={{
+                position: 'absolute',
+                bottom: '1.5rem',
+                left: 0,
+                right: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '1.5rem',
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary)'
+            }}>
+                <span>© 2025 CloudPocket</span>
+                <span style={{ opacity: 0.5 }}>•</span>
+                <a
+                    onClick={() => navigate('/privacy')}
+                    style={{
+                        color: 'var(--text-secondary)',
+                        textDecoration: 'none',
+                        cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                >
+                    Privacy Policy
+                </a>
+                <span style={{ opacity: 0.5 }}>•</span>
+                <a
+                    onClick={() => navigate('/terms')}
+                    style={{
+                        color: 'var(--text-secondary)',
+                        textDecoration: 'none',
+                        cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                >
+                    Terms of Service
+                </a>
+            </div>
         </div>
     );
 };

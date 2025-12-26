@@ -70,6 +70,36 @@ const Navbar = () => {
                     >
                         CloudPocket
                     </motion.span>
+
+                    {/* Legal Links */}
+                    <span style={{ opacity: 0.3, marginLeft: '0.5rem' }}>•</span>
+                    <span
+                        onClick={() => navigate('/privacy')}
+                        style={{
+                            fontSize: '0.85rem',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            opacity: 0.7
+                        }}
+                        onMouseEnter={(e) => e.target.style.opacity = 1}
+                        onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                    >
+                        Privacy
+                    </span>
+                    <span style={{ opacity: 0.3 }}>•</span>
+                    <span
+                        onClick={() => navigate('/terms')}
+                        style={{
+                            fontSize: '0.85rem',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            opacity: 0.7
+                        }}
+                        onMouseEnter={(e) => e.target.style.opacity = 1}
+                        onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                    >
+                        Terms
+                    </span>
                 </div>
                 {user && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>

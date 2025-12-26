@@ -4,7 +4,7 @@ CloudPocket is a secure, personal document management system designed to help us
 
 ## ✨ Features
 
--   **📧 Email OTP Verification**: Secure signup with email verification via EmailJS (free tier: 200 emails/month).
+-   **📧 Email OTP Verification**: Secure signup with server-side OTP verification via Vercel API routes.
 -   **🔐 Smart Login Flow**: Phone + Email combination for account identification with strict validation.
 -   **🔑 Forgot Password**: OTP-based password reset flow for existing users.
 -   **📁 Categorized Storage**: Organize documents into 13+ categories (Identity, Education, Medical, Financial, etc.).
@@ -21,14 +21,25 @@ CloudPocket is a secure, personal document management system designed to help us
 -   **👁️ Password Visibility Toggle**: Eye icons on all password fields for better UX.
 -   **🔒 Single-Session Login**: Only one device can be logged in at a time; new logins auto-logout old sessions.
 
+## 🔒 Security Features
+
+-   **🔑 Bcrypt Password Hashing**: Industry-standard bcrypt with 12 salt rounds via Vercel serverless functions.
+-   **📧 Server-Side OTP**: OTP generated and verified on server - never exposed to client.
+-   **⏱️ Rate Limiting**: 5 failed login attempts = 5-minute lockout to prevent brute-force attacks.
+-   **🛡️ Security Headers**: X-Frame-Options, X-Content-Type-Options, XSS Protection via Vercel.
+-   **🚨 Error Boundary**: Graceful error handling prevents app crashes.
+-   **📜 Legal Compliance**: Privacy Policy & Terms of Service pages included.
+-   **🔐 Input Sanitization**: Protection against XSS attacks on user inputs.
+
 ## 🛠️ Tech Stack
 
 -   **Frontend**: React (Vite)
 -   **Backend/Database**: Firebase Firestore
+-   **Serverless API**: Vercel Functions (for secure OTP & password hashing)
 -   **Authentication**: Custom Firebase-backed authentication with session management.
 -   **Email Service**: EmailJS (for OTP verification)
 -   **File Storage**: Cloudinary (Automatic resource detection and optimized delivery).
--   **Password Security**: SHA-256 Hashing via Web Crypto API (with fallback for HTTP dev).
+-   **Password Security**: Bcrypt hashing via Vercel serverless functions.
 
 ## 🚀 Getting Started
 
@@ -78,7 +89,6 @@ CloudPocket is a secure, personal document management system designed to help us
     ```bash
     npm run dev
     ```
-
 
 ## 📜 License & Copyright
 
